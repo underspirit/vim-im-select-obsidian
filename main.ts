@@ -65,9 +65,23 @@ export default class VimImPlugin extends Plugin {
         private currentReplaceIM = '';
         private previousMode = '';
         private isWinPlatform = false;
+        private onVimKeypress = async (key: string) => {
+                if (key === "<Esc>") {
+                        console.info("press esc");
+                        this.switchToNormal();
+                        return;
+                }
+                if (key === "r") {
+                        console.info("press r");
+                        this.switchToInsert();
+                        return;
+                }
+        };
 
-	async onload() {
-		await this.loadSettings();
+        async onload() {
+                await this.loadSettings();
+                const vaultDir = this.app.vault.adapter.getBasePath();
+                process.chdir(vaultDir);
 
 		// when open a file, to initialize current
 		// editor type CodeMirror5 or CodeMirror6
@@ -75,10 +89,12 @@ export default class VimImPlugin extends Plugin {
 			const view = this.getActiveView();
 			if (view) {
 				const editor = this.getCodeMirror(view);
-				if (editor) {
-					editor.off('vim-mode-change', this.onVimModeChanged);
-					editor.on('vim-mode-change', this.onVimModeChanged);
-				}
+                                if (editor) {
+                                        editor.off('vim-mode-change', this.onVimModeChanged);
+                                        editor.on('vim-mode-change', this.onVimModeChanged);
+                                        editor.off('vim-keypress', this.onVimModeChanged);
+                                        editor.on('vim-keypress', this.onVimKeypress);
+                                }
 			}
 		});
 
@@ -233,19 +249,24 @@ export default class VimImPlugin extends Plugin {
 
         onVimModeChanged = async (modeObj: any) => {
                 if (isEmpty(modeObj)) {
+                        console.info("empty");
                         return;
                 }
                 switch (modeObj.mode) {
                         case "insert":
                                 this.switchToInsert();
+                                console.info("insert");
                                 break;
                         case "visual":
                                 this.switchToVisual();
+                                console.info("visual");
                                 break;
                         case "replace":
                                 this.switchToReplace();
+                                console.info("replace");
                                 break;
                         default:
+                                console.info("normal");
                                 if (this.previousMode === "normal") {
                                         break;
                                 }
